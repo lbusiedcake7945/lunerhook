@@ -1,54 +1,552 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>lunerhook</title>
-<link rel="icon"
+  <link rel="icon"
 href="discord-avatar-512-UP3D4.png"
 type="image/png">
-</head>
   <style>
+    :root {
+      --bg-color: #1e1e2d;
+      --card-color: #2a2a3a;
+      --text-color: #e0e0e0;
+      --accent-color: #7289da;
+      --input-bg: #3a3a4a;
+      --input-border: #4a4a5a;
+      --success-color: #43b581;
+      --error-color: #f04747;
+    }
+
     body {
-    background-color: black;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background-color: var(--card-color);
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px;
+    }
+
+    h1, h2, h3 {
+      color: var(--accent-color);
+      margin-top: 0;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid var(--input-border);
+      border-radius: 5px;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      font-size: 16px;
+      transition: border 0.3s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    button {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #677bc4;
+    }
+
+    .success {
+      color: var(--success-color);
+    }
+
+    .error {
+      color: var(--error-color);
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: var(--input-bg);
+      border-radius: 5px 5px 0 0;
+      margin-right: 5px;
+    }
+
+    .tab.active {
+      background-color: var(--accent-color);
       color: white;
     }
-  </style>
-<body>
-  <h2>lunerhook</h2>
 
-  <input type="url" id="webhook" placeholder="Webhook URL’nizi girin" required style="width: 300px;"><br><br>
-  <textarea id="message" placeholder="Mesajınızı yazın" rows="5" cols="40" required></textarea><br><br>
-  <button onclick="sendToWebhook()">Gönder</button>
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .embed-preview {
+      background-color: var(--input-bg);
+      border-radius: 5px;
+      padding: 15px;
+      margin-top: 20px;
+      border-left: 4px solid var(--accent-color);
+    }
+
+    .embed-field {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .embed-field input {
+      flex: 1;
+    }
+
+    .add-btn {
+      background-color: var(--success-color);
+      padding: 8px 15px;
+      margin-right: 10px;
+    }
+
+    .remove-btn {
+      background-color: var(--error-color);
+      padding: 8px 15px;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--card-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+  
+  <div class="container">
+    <div class="card">
+      <h1>lunerhook</h1>
+      <p>lunerhook'a hoş geldin.</p>
+      
+      <div class="form-group">
+        <label for="webhook">Webhook URL</label>
+        <input type="url" id="webhook" placeholder="https://discord.com/api/webhooks/..." required>
+      </div>
+      
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('simple')">Basit Mesaj</div>
+        <div class="tab" onclick="switchTab('embed')">Embed</div>
+        <div class="tab" onclick="switchTab('buttons')">Butonlar</div>
+      </div>
+      
+      <!-- Basit Mesaj Tab -->
+      <div id="simple-tab" class="tab-content active">
+        <div class="form-group">
+          <label for="message">Mesaj İçeriği</label>
+          <textarea id="message" rows="5" placeholder="Göndermek istediğiniz mesajı yazın..."></textarea>
+        </div>
+      </div>
+      
+      <!-- Embed Tab -->
+      <div id="embed-tab" class="tab-content">
+        <div class="form-group">
+          <label for="embed-title">Embed Başlık</label>
+          <input type="text" id="embed-title" placeholder="Embed başlığını girin">
+        </div>
+        
+        <div class="form-group">
+          <label for="embed-description">Embed Açıklama</label>
+          <textarea id="embed-description" rows="3" placeholder="Embed açıklamasını girin"></textarea>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="embed-color">Renk (HEX)</label>
+            <input type="text" id="embed-color" placeholder="#7289da" value="#7289da">
+          </div>
+          <div class="form-group">
+            <label for="embed-author">Yazar</label>
+            <input type="text" id="embed-author" placeholder="Yazar adı">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="embed-image">Resim URL</label>
+          <input type="url" id="embed-image" placeholder="https://example.com/image.png">
+        </div>
+        
+        <div class="form-group">
+          <label for="embed-thumbnail">Küçük Resim URL</label>
+          <input type="url" id="embed-thumbnail" placeholder="https://example.com/thumbnail.png">
+        </div>
+        
+        <h3>Alanlar (Fields)</h3>
+        <div id="embed-fields">
+          <!-- Fields will be added here dynamically -->
+        </div>
+        <button type="button" class="add-btn" onclick="addEmbedField()">Alan Ekle</button>
+        
+        <div class="form-group">
+          <label for="embed-footer">Footer Metni</label>
+          <input type="text" id="embed-footer" placeholder="Footer metni">
+        </div>
+        
+        <div class="form-group">
+          <label for="embed-footer-icon">Footer İkon URL</label>
+          <input type="url" id="embed-footer-icon" placeholder="https://example.com/icon.png">
+        </div>
+        
+        <h3>Embed Önizleme</h3>
+        <div class="embed-preview" id="embed-preview">
+          Embed önizlemesi burada görünecek
+        </div>
+      </div>
+      
+      <!-- Butonlar Tab -->
+      <div id="buttons-tab" class="tab-content">
+        <div class="form-group">
+          <label for="button-message">Mesaj İçeriği</label>
+          <textarea id="button-message" rows="3" placeholder="Butonlarla birlikte gönderilecek mesaj"></textarea>
+        </div>
+        
+        <h3>Butonlar</h3>
+        <div id="button-components">
+          <!-- Butonlar buraya eklenecek -->
+        </div>
+        <button type="button" class="add-btn" onclick="addButton()">Buton Ekle</button>
+      </div>
+      
+      <button onclick="sendToWebhook()">Webhook'a Gönder</button>
+      <div id="status-message"></div>
+    </div>
+  </div>
 
   <script>
-    function sendToWebhook() {
-      const webhookURL = document.getElementById("webhook").value;
-      const message = document.getElementById("message").value;
+    // Tema değiştirme
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+      if (document.body.classList.contains('light-mode')) {
+        document.documentElement.style.setProperty('--bg-color', '#f5f5f5');
+        document.documentElement.style.setProperty('--card-color', '#ffffff');
+        document.documentElement.style.setProperty('--text-color', '#333333');
+        document.documentElement.style.setProperty('--input-bg', '#f0f0f0');
+        document.documentElement.style.setProperty('--input-border', '#cccccc');
+      } else {
+        document.documentElement.style.setProperty('--bg-color', '#1e1e2d');
+        document.documentElement.style.setProperty('--card-color', '#2a2a3a');
+        document.documentElement.style.setProperty('--text-color', '#e0e0e0');
+        document.documentElement.style.setProperty('--input-bg', '#3a3a4a');
+        document.documentElement.style.setProperty('--input-border', '#4a4a5a');
+      }
+    }
 
-      if (!webhookURL || !message) {
-        alert("Webhook URL ve mesaj boş olamaz!");
+    // Tab geçişleri
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+      
+      if (tabName === 'embed') {
+        updateEmbedPreview();
+      }
+    }
+
+    // Embed alanı ekleme
+    function addEmbedField() {
+      const fieldId = Date.now();
+      const fieldsContainer = document.getElementById('embed-fields');
+      
+      const fieldDiv = document.createElement('div');
+      fieldDiv.className = 'embed-field';
+      fieldDiv.id = `field-${fieldId}`;
+      
+      fieldDiv.innerHTML = `
+        <input type="text" id="field-name-${fieldId}" placeholder="Alan adı" oninput="updateEmbedPreview()">
+        <input type="text" id="field-value-${fieldId}" placeholder="Alan değeri" oninput="updateEmbedPreview()">
+        <select id="field-inline-${fieldId}" onchange="updateEmbedPreview()">
+          <option value="false">Normal</option>
+          <option value="true">Inline</option>
+        </select>
+        <button type="button" class="remove-btn" onclick="removeEmbedField('${fieldId}')">Sil</button>
+      `;
+      
+      fieldsContainer.appendChild(fieldDiv);
+      updateEmbedPreview();
+    }
+
+    // Embed alanı silme
+    function removeEmbedField(id) {
+      document.getElementById(`field-${id}`).remove();
+      updateEmbedPreview();
+    }
+
+    // Embed önizleme güncelleme
+    function updateEmbedPreview() {
+      const preview = document.getElementById('embed-preview');
+      const title = document.getElementById('embed-title').value;
+      const description = document.getElementById('embed-description').value;
+      const color = document.getElementById('embed-color').value;
+      const author = document.getElementById('embed-author').value;
+      
+      let html = '';
+      
+      if (title) html += `<h3 style="color: ${color || '#7289da'}">${title}</h3>`;
+      if (description) html += `<p>${description.replace(/\n/g, '<br>')}</p>`;
+      if (author) html += `<small><strong>${author}</strong></small><br>`;
+      
+      // Alanları ekle
+      const fields = [];
+      document.querySelectorAll('.embed-field').forEach(fieldDiv => {
+        const id = fieldDiv.id.replace('field-', '');
+        const name = document.getElementById(`field-name-${id}`).value;
+        const value = document.getElementById(`field-value-${id}`).value;
+        if (name && value) {
+          fields.push({name, value});
+        }
+      });
+      
+      if (fields.length > 0) {
+        html += '<div style="margin-top: 10px;">';
+        fields.forEach(field => {
+          html += `<p><strong>${field.name}</strong><br>${field.value}</p>`;
+        });
+        html += '</div>';
+      }
+      
+      const footer = document.getElementById('embed-footer').value;
+      if (footer) html += `<small style="display: block; margin-top: 10px;">${footer}</small>`;
+      
+      preview.innerHTML = html || 'Embed önizlemesi burada görünecek';
+    }
+
+    // Buton ekleme
+    function addButton() {
+      const buttonId = Date.now();
+      const buttonsContainer = document.getElementById('button-components');
+      
+      const buttonDiv = document.createElement('div');
+      buttonDiv.className = 'form-row';
+      buttonDiv.style.marginBottom = '10px';
+      buttonDiv.id = `button-${buttonId}`;
+      
+      buttonDiv.innerHTML = `
+        <input type="text" id="button-label-${buttonId}" placeholder="Buton metni" style="flex: 2;">
+        <input type="url" id="button-url-${buttonId}" placeholder="URL" style="flex: 3;">
+        <select id="button-style-${buttonId}" style="flex: 1;">
+          <option value="1">Mavi</option>
+          <option value="2">Gri</option>
+          <option value="3">Yeşil</option>
+          <option value="4">Kırmızı</option>
+          <option value="5">URL</option>
+        </select>
+        <button type="button" class="remove-btn" onclick="removeButton('${buttonId}')">Sil</button>
+      `;
+      
+      buttonsContainer.appendChild(buttonDiv);
+    }
+
+    // Buton silme
+    function removeButton(id) {
+      document.getElementById(`button-${id}`).remove();
+    }
+
+    // Webhook'a gönderme
+    function sendToWebhook() {
+      const webhookURL = document.getElementById('webhook').value;
+      
+      if (!webhookURL) {
+        showStatus('Webhook URL boş olamaz!', 'error');
         return;
       }
+      
+      const activeTab = document.querySelector('.tab.active').getAttribute('onclick').replace("switchTab('", "").replace("')", "");
+      let payload = {};
 
+      if (activeTab === 'simple') {
+        const message = document.getElementById('message').value;
+        if (!message) {
+          showStatus('Mesaj boş olamaz!', 'error');
+          return;
+        }
+        payload.content = message;
+      } 
+      else if (activeTab === 'embed') {
+        const embed = createEmbedObject();
+        payload.embeds = [embed];
+      }
+      else if (activeTab === 'buttons') {
+        const message = document.getElementById('button-message').value;
+        const buttons = createButtonsArray();
+        
+        if (message) payload.content = message;
+        if (buttons.length > 0) {
+          payload.components = [{
+            type: 1,
+            components: buttons
+          }];
+        }
+        
+        if (!message && buttons.length === 0) {
+          showStatus('Mesaj veya buton eklemelisiniz!', 'error');
+          return;
+        }
+      }
+      
       fetch(webhookURL, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          content: message
-        })
+        body: JSON.stringify(payload)
       })
       .then(res => {
         if (res.ok) {
-          alert("Mesaj gönderildi!");
+          showStatus('Mesaj başarıyla gönderildi!', 'success');
         } else {
-          alert("Gönderme başarısız. Webhook URL geçersiz olabilir.");
+          res.json().then(data => {
+            showStatus(`Hata: ${data.message || 'Bilinmeyen hata'}`, 'error');
+          }).catch(() => {
+            showStatus('Gönderme başarısız. Webhook URL geçersiz olabilir.', 'error');
+          });
         }
       })
       .catch(err => {
-        alert("Bir hata oluştu: " + err.message);
+        showStatus(`Bir hata oluştu: ${err.message}`, 'error');
       });
     }
+
+    // Embed objesi oluşturma
+    function createEmbedObject() {
+      const embed = {
+        title: document.getElementById('embed-title').value,
+        description: document.getElementById('embed-description').value,
+        color: parseInt(document.getElementById('embed-color').value.replace('#', ''), 16),
+        author: document.getElementById('embed-author').value ? {
+          name: document.getElementById('embed-author').value
+        } : undefined,
+        image: document.getElementById('embed-image').value ? {
+          url: document.getElementById('embed-image').value
+        } : undefined,
+        thumbnail: document.getElementById('embed-thumbnail').value ? {
+          url: document.getElementById('embed-thumbnail').value
+        } : undefined,
+        footer: document.getElementById('embed-footer').value ? {
+          text: document.getElementById('embed-footer').value,
+          icon_url: document.getElementById('embed-footer-icon').value || undefined
+        } : undefined
+      };
+      
+      // Alanları ekle
+      const fields = [];
+      document.querySelectorAll('.embed-field').forEach(fieldDiv => {
+        const id = fieldDiv.id.replace('field-', '');
+        const name = document.getElementById(`field-name-${id}`).value;
+        const value = document.getElementById(`field-value-${id}`).value;
+        const inline = document.getElementById(`field-inline-${id}`).value === 'true';
+        
+        if (name && value) {
+          fields.push({
+            name,
+            value,
+            inline
+          });
+        }
+      });
+      
+      if (fields.length > 0) embed.fields = fields;
+      
+      return embed;
+    }
+
+    // Buton array'i oluşturma
+    function createButtonsArray() {
+      const buttons = [];
+      
+      document.querySelectorAll('[id^="button-"]').forEach(buttonDiv => {
+        const id = buttonDiv.id.replace('button-', '');
+        const label = document.getElementById(`button-label-${id}`).value;
+        const url = document.getElementById(`button-url-${id}`).value;
+        const style = parseInt(document.getElementById(`button-style-${id}`).value);
+        
+        if (label && url) {
+          buttons.push({
+            type: 2,
+            label,
+            style,
+            url
+          });
+        }
+      });
+      
+      return buttons;
+    }
+
+    // Durum mesajı gösterme
+    function showStatus(message, type) {
+      const statusDiv = document.getElementById('status-message');
+      statusDiv.textContent = message;
+      statusDiv.className = type;
+    }
+
+    // Sayfa yüklendiğinde bir embed alanı ekle
+    window.onload = function() {
+      addEmbedField();
+    };
   </script>
 </body>
 </html>

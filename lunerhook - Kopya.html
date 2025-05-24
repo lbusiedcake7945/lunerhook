@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>lunerhook</title>
+<link rel="icon"
+href="discord-avatar-512-UP3D4.png"
+type="image/png>
+</head>
+<body>
+  <h2>lunerhook</h2>
+
+  <input type="url" id="webhook" placeholder="Webhook URL’nizi girin" required style="width: 300px;"><br><br>
+  <textarea id="message" placeholder="Mesajınızı yazın" rows="5" cols="40" required></textarea><br><br>
+  <button onclick="sendToWebhook()">Gönder</button>
+
+  <script>
+    function sendToWebhook() {
+      const webhookURL = document.getElementById("webhook").value;
+      const message = document.getElementById("message").value;
+
+      if (!webhookURL || !message) {
+        alert("Webhook URL ve mesaj boş olamaz!");
+        return;
+      }
+
+      fetch(webhookURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          content: message
+        })
+      })
+      .then(res => {
+        if (res.ok) {
+          alert("Mesaj gönderildi!");
+        } else {
+          alert("Gönderme başarısız. Webhook URL geçersiz olabilir.");
+        }
+      })
+      .catch(err => {
+        alert("Bir hata oluştu: " + err.message);
+      });
+    }
+  </script>
+</body>
+</html>
